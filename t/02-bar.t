@@ -4,7 +4,7 @@ use Test::More;
 
 use lib 't/lib';
 
-use Foo plugin_base_classes => ['A', 'B'], plugins => ['Bar'];
+use Foo plugins => ['Bar'];
 use Foo::A;
 use Foo::B;
 

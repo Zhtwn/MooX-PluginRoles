@@ -63,7 +63,7 @@ sub _apply_roles {
             croak "plugin_dir $plugin_path does not exist";
         }
 
-        my $plugin_base_classes = $caller_opts->{plugin_base_classes}
+        my $plugin_base_classes = $opts->{plugin_base_classes}
           or croak 'must provide plugin_base_classes when using PluginRoles';
 
         for my $class (@$plugin_base_classes) {
