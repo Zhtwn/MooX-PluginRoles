@@ -13,20 +13,6 @@ use Path::Iterator::Rule 1.004;
 use Carp;
 use Module::Runtime 0.014 qw( require_module );
 
-sub _find_moo_classes {
-    my ( $base_dir, $plugin_dir ) = @_;
-    my $iter = Path::Iterator::Rule->new->file->skip_dirs($plugin_dir)
-      ->perl_module->contents_match(qr/\buse Moo\s*;/);
-    my @dirs;
-    for my $dir ($iter->all($base_dir)) {
-        my $p = path($dir)->relative($base_dir);
-        $p =~ s/[.]pm$//;
-        $p =~ s{/}{::}g;
-        push @dirs, $p;
-    }
-    return @dirs;
-}
-
 my %CLASS_PLUGINS;
 
 sub _apply_roles {
@@ -78,7 +64,7 @@ sub _apply_roles {
         }
 
         my $plugin_base_classes = $caller_opts->{plugin_base_classes}
-          || [ _find_moo_classes( $base_dir, $plugin_path ) ];
+          or croak 'must provide plugin_base_classes when using PluginRoles';
 
         for my $class (@$plugin_base_classes) {
             my $base_class = "$pkg::$class";
