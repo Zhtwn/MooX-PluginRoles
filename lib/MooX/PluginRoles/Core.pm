@@ -83,7 +83,7 @@ sub _build__plugin_roles {
 
     for my $found ( $finder->plugins ) {
         my ( $plugin, $base_class ) =
-          $found =~ /^${search_path}::([^:]+)::(.*)$/;
+          $found =~ / ^ $search_path :: ([^:]+) :: (.*) $ /x;
         $plugin_roles{$plugin}->{$base_class} = $found;
     }
 
