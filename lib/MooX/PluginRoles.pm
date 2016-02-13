@@ -63,7 +63,6 @@ sub _apply_roles {
     my $need_roles = _check_plugins( $pkg, $plugins, $p_file, $p_line );
 
     if ($need_roles) {
-        $DB::single = 1;
         my $plugin_dir = $caller_opts->{plugin_dir} || 'PluginRoles';
         my $plugin_path = $base_dir->child($plugin_dir);
 
