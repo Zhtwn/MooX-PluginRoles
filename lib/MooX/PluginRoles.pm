@@ -8,6 +8,7 @@ our $VERSION = '0.01';
 
 use MooX::PluginRoles::Core;
 use Carp;
+use namespace::clean;
 
 my %PLUGIN_CORES;
 

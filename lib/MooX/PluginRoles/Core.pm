@@ -6,6 +6,7 @@ use Moo::Role ();
 use Module::Pluggable::Object 4.9;
 use Module::Runtime 0.014 qw( require_module );
 use Carp;
+use namespace::clean;
 
 has pkg => (
     is       => 'ro',
