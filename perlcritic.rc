@@ -1,2 +1,5 @@
 severity = 4
 verbose = 7
+
+[Subroutines::ProhibitUnusedPrivateSubroutines]
+private_name_regex = _(?!build_|_)\w+
