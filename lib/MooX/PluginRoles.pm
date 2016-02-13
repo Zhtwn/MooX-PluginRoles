@@ -15,14 +15,8 @@ use Module::Runtime 0.014 qw( require_module );
 
 my %CLASS_PLUGINS;
 
-sub _apply_roles {
-    my ( $pkg, $file, $p_file, $p_line, $opts, $caller_opts ) = @_;
-
-    $file =~ s/[.]pm$//;
-    my $base_dir = path($file);
-
-    my $plugins = $caller_opts->{plugins} || [];
-    $plugins = [$plugins] unless ref $plugins;
+sub _check_plugins {
+    my ( $pkg, $plugins, $p_file, $p_line ) = @_;
 
     my $canonical = join '||', sort @{$plugins};
 
@@ -54,7 +48,21 @@ sub _apply_roles {
 
     push @{$spec->{callers}}, { file => $p_file, line => $p_line };
 
-    if ( $need_roles && @$plugins) {
+    return $need_roles && scalar @$plugins;
+}
+
+sub _apply_roles {
+    my ( $pkg, $file, $p_file, $p_line, $opts, $caller_opts ) = @_;
+
+    $file =~ s/[.]pm$//;
+    my $base_dir = path($file);
+
+    my $plugins = $caller_opts->{plugins} || [];
+    $plugins = [$plugins] unless ref $plugins;
+
+    my $need_roles = _check_plugins( $pkg, $plugins, $p_file, $p_line );
+
+    if ($need_roles) {
         $DB::single = 1;
         my $plugin_dir = $caller_opts->{plugin_dir} || 'PluginRoles';
         my $plugin_path = $base_dir->child($plugin_dir);
