@@ -51,6 +51,24 @@ sub _check_plugins {
     return $need_roles && scalar @$plugins;
 }
 
+sub _apply_plugins_to_class {
+    my ( $pkg, $class, $plugin_dir, $plugins ) = @_;
+
+    my $base_class = "$pkg::$class";
+    my @class_plugins;
+    for my $plugin (@$plugins) {
+        my $role = join '::', $pkg, $plugin_dir, $plugin, $class;
+        try {
+            require_module($role)
+        }
+          and push @class_plugins, $role;
+    }
+
+    Moo::Role->apply_roles_to_package( $base_class, @class_plugins )
+      if @class_plugins;
+    return;
+}
+
 sub _apply_roles {
     my ( $pkg, $file, $p_file, $p_line, $opts, $caller_opts ) = @_;
 
@@ -74,18 +92,7 @@ sub _apply_roles {
           or croak 'must provide plugin_base_classes when using PluginRoles';
 
         for my $class (@$plugin_base_classes) {
-            my $base_class = "$pkg::$class";
-            my @class_plugins;
-            for my $plugin (@$plugins) {
-                my $role = join '::', $pkg, $plugin_dir, $plugin, $class;
-                try {
-                    require_module($role)
-                }
-                  and push @class_plugins, $role;
-            }
-
-            Moo::Role->apply_roles_to_package( $base_class, @class_plugins )
-              if @class_plugins;
+            _apply_plugins_to_class( $pkg, $class, $plugin_dir, $plugins );
         }
     }
 }
