@@ -30,13 +30,12 @@ sub _find_moo_classes {
 my %CLASS_PLUGINS;
 
 sub _apply_roles {
-    my ( $pkg, $file, $p_file, $p_line, @parent_args ) = @_;
-    my %caller_opts = @parent_args[ 1 .. $#parent_args ];
+    my ( $pkg, $file, $p_file, $p_line, $caller_opts ) = @_;
 
     $file =~ s/[.]pm$//;
     my $base_dir = path($file);
 
-    my $plugins = $caller_opts{plugins} || [];
+    my $plugins = $caller_opts->{plugins} || [];
     $plugins = [$plugins] unless ref $plugins;
 
     my $canonical = join '||', sort @{$plugins};
@@ -71,14 +70,14 @@ sub _apply_roles {
 
     if ( $need_roles && @$plugins) {
         $DB::single = 1;
-        my $plugin_dir = $caller_opts{plugin_dir} || 'PluginRoles';
+        my $plugin_dir = $caller_opts->{plugin_dir} || 'PluginRoles';
         my $plugin_path = $base_dir->child($plugin_dir);
 
         if ( !$plugin_path->is_dir ) {
             croak "plugin_dir $plugin_path does not exist";
         }
 
-        my $plugin_base_classes = $caller_opts{plugin_base_classes}
+        my $plugin_base_classes = $caller_opts->{plugin_base_classes}
           || [ _find_moo_classes( $base_dir, $plugin_path ) ];
 
         for my $class (@$plugin_base_classes) {
@@ -111,8 +110,9 @@ sub import {
         no warnings 'redefine';
 
         *{"${pkg}::import"} = sub {
+            my $caller_opts = { @_[ 1 .. $#_ ] };
             $old->(@_) if $old;
-            _apply_roles( $pkg, $file, $p_file, $p_line, @_ );
+            _apply_roles( $pkg, $file, $p_file, $p_line, $caller_opts );
         };
     }
 
