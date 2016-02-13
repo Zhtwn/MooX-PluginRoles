@@ -30,7 +30,7 @@ sub _find_moo_classes {
 my %CLASS_PLUGINS;
 
 sub _apply_roles {
-    my ( $pkg, $file, $p_file, $p_line, $caller_opts ) = @_;
+    my ( $pkg, $file, $p_file, $p_line, $opts, $caller_opts ) = @_;
 
     $file =~ s/[.]pm$//;
     my $base_dir = path($file);
@@ -112,7 +112,7 @@ sub import {
         *{"${pkg}::import"} = sub {
             my $caller_opts = { @_[ 1 .. $#_ ] };
             $old->(@_) if $old;
-            _apply_roles( $pkg, $file, $p_file, $p_line, $caller_opts );
+            _apply_roles( $pkg, $file, $p_file, $p_line, \%opts, $caller_opts );
         };
     }
 
