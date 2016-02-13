@@ -10,6 +10,7 @@ use Foo::B;
 
 can_ok( 'Foo::A', 'a' );
 ok( !Foo::A->can('bar_a'), 'no Foo::A->bar_a' );
+can_ok( 'Foo::A', 'baz_a' );
 
 can_ok( 'Foo::B', 'b' );
 can_ok( 'Foo::B', 'baz_b' );
