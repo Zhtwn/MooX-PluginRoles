@@ -48,7 +48,7 @@ sub import {
     {
         my $old = $pkg->can('import');
 
-        no strict 'refs';
+        no strict 'refs';    ## no critic (ProhibitNoStrict)
         no warnings 'redefine';
 
         *{"${pkg}::import"} = sub {
