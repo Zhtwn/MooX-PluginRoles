@@ -6,95 +6,37 @@ use 5.008_005;
 
 our $VERSION = '0.01';
 
-use Moo::Role ();
-use Try::Tiny;
-use Path::Tiny;
-use Path::Iterator::Rule 1.004;
+use MooX::PluginRoles::Core;
 use Carp;
-use Module::Runtime 0.014 qw( require_module );
 
-my %CLASS_PLUGINS;
+my %PLUGIN_CORES;
 
-sub _check_plugins {
-    my ( $pkg, $plugins, $p_file, $p_line ) = @_;
-
-    my $canonical = join '||', sort @{$plugins};
-
-    my $spec = $CLASS_PLUGINS{$pkg};
-
-    my $need_roles;
-
-    if ($spec) {
-        my $spec_canonical = $spec->{canonical} || '';
-        if ( $spec_canonical ne $canonical ) {
-            my $spec_plugins = join ', ', @{ $spec->{plugins} };
-            $spec_plugins ||= 'no';
-            croak "PluginRoles conflict: cannot use $pkg with @$plugins plugin(s): ",
-              "used with $spec_plugins plugin(s) at:\n\t",
-              join( "\n\t",
-                map { $_->{file} . ', line ' . $_->{line} }
-                  @{ $spec->{callers} } ),
-              "\n";
-        }
-    }
-    else {
-        $spec = $CLASS_PLUGINS{$pkg} = {
-            canonical => $canonical,
-            plugins   => $plugins,
-        };
-
-        $need_roles = 1;
-    }
-
-    push @{$spec->{callers}}, { file => $p_file, line => $p_line };
-
-    return $need_roles && scalar @$plugins;
-}
-
-sub _apply_plugins_to_class {
-    my ( $pkg, $class, $plugin_dir, $plugins ) = @_;
-
-    my $base_class = "$pkg::$class";
-    my @class_plugins;
-    for my $plugin (@$plugins) {
-        my $role = join '::', $pkg, $plugin_dir, $plugin, $class;
-        try {
-            require_module($role)
-        }
-          and push @class_plugins, $role;
-    }
-
-    Moo::Role->apply_roles_to_package( $base_class, @class_plugins )
-      if @class_plugins;
-    return;
-}
-
-sub _apply_roles {
+sub _register_plugins {
     my ( $pkg, $file, $p_file, $p_line, $opts, $caller_opts ) = @_;
 
-    $file =~ s/[.]pm$//;
-    my $base_dir = path($file);
-
     my $plugins = $caller_opts->{plugins} || [];
-    $plugins = [$plugins] unless ref $plugins;
 
-    my $need_roles = _check_plugins( $pkg, $plugins, $p_file, $p_line );
+    my $core = $PLUGIN_CORES{$pkg} ||= MooX::PluginRoles::Core->new(
+        pkg          => $pkg,
+        base_classes => $opts->{plugin_base_classes},
+        plugin_dir   => $caller_opts->{plugin_dir} || 'PluginRoles',
+        plugins      => $plugins,
+    );
 
-    if ($need_roles) {
-        my $plugin_dir = $caller_opts->{plugin_dir} || 'PluginRoles';
-        my $plugin_path = $base_dir->child($plugin_dir);
-
-        if ( !$plugin_path->is_dir ) {
-            croak "plugin_dir $plugin_path does not exist";
-        }
-
-        my $plugin_base_classes = $opts->{plugin_base_classes}
-          or croak 'must provide plugin_base_classes when using PluginRoles';
-
-        for my $class (@$plugin_base_classes) {
-            _apply_plugins_to_class( $pkg, $class, $plugin_dir, $plugins );
-        }
+    if ( !$core->plugins_compatible($plugins) ) {
+        my $spec_plugins = join ', ', @{ $core->plugins };
+        croak
+          "PluginRoles conflict: cannot use $pkg with @$plugins plugin(s):\n\t",
+          "Already used with $spec_plugins plugin(s) at:\n\t\t",
+          join( "\n\t\t", $core->caller_list ),
+          "\n";
     }
+
+    $core->add_caller( $p_file, $p_line );
+
+    $core->apply_plugins;
+
+    return;
 }
 
 sub import {
@@ -112,7 +54,7 @@ sub import {
         *{"${pkg}::import"} = sub {
             my $caller_opts = { @_[ 1 .. $#_ ] };
             $old->(@_) if $old;
-            _apply_roles( $pkg, $file, $p_file, $p_line, \%opts, $caller_opts );
+            _register_plugins( $pkg, $file, $p_file, $p_line, \%opts, $caller_opts );
         };
     }
 
