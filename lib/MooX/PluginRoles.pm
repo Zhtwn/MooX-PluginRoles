@@ -49,8 +49,8 @@ sub import {
     {
         my $old = $pkg->can('import');
 
-        no strict 'refs';    ## no critic (ProhibitNoStrict)
-        no warnings 'redefine';
+        no strict 'refs';          ## no critic (ProhibitNoStrict)
+        no warnings 'redefine';    ## no critic (ProhibitNoWarnings)
 
         *{"${pkg}::import"} = sub {
             my $caller_opts = { @_[ 1 .. $#_ ] };
@@ -59,6 +59,7 @@ sub import {
         };
     }
 
+    return;
 }
 
 1;

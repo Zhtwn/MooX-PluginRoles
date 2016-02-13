@@ -55,6 +55,7 @@ has _callers => (
 sub add_caller {
     my ( $self, $file, $line ) = @_;
     push @{ $self->_callers }, { file => $file, line => $line };
+    return;
 }
 
 sub caller_list {
