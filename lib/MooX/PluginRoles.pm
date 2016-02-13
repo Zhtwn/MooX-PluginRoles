@@ -13,7 +13,7 @@ use namespace::clean;
 my %PLUGIN_CORES;
 
 sub _register_plugins {
-    my ( $pkg, $file, $p_file, $p_line, $opts, $caller_opts ) = @_;
+    my ( $pkg, $p_file, $p_line, $opts, $caller_opts ) = @_;
 
     my $plugins = $caller_opts->{plugins} || [];
 
@@ -55,7 +55,7 @@ sub import {
         *{"${pkg}::import"} = sub {
             my $caller_opts = { @_[ 1 .. $#_ ] };
             $old->(@_) if $old;
-            _register_plugins( $pkg, $file, $p_file, $p_line, \%opts, $caller_opts );
+            _register_plugins( $pkg, $p_file, $p_line, \%opts, $caller_opts );
         };
     }
 
