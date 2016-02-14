@@ -15,12 +15,13 @@ my %PLUGIN_CORES;
 sub _register_plugins {
     my ( $pkg, $p_file, $p_line, $opts, $caller_opts ) = @_;
 
-    my $plugins = $caller_opts->{plugins} || [];
+    my $plugins    = $caller_opts->{plugins} || [];
+    my $plugin_dir = $opts->{plugin_dir}     || 'PluginRoles';
 
     my $core = $PLUGIN_CORES{$pkg} ||= MooX::PluginRoles::Core->new(
         pkg          => $pkg,
         base_classes => $opts->{plugin_base_classes},
-        plugin_dir   => $caller_opts->{plugin_dir} || 'PluginRoles',
+        plugin_dir   => $plugin_dir,
         plugins      => $plugins,
     );
 
