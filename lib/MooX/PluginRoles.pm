@@ -12,7 +12,7 @@ use namespace::clean;
 
 my %PLUGIN_CORES;
 
-sub _register_plugins {
+sub _register_plugins {    ## no critic (ProhibitUnusedPrivateSubroutines)
     my %args = @_;
 
     my $core = $PLUGIN_CORES{ $args{pkg} } ||= MooX::PluginRoles::Core->new(
