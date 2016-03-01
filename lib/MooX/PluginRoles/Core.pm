@@ -2,11 +2,12 @@ package MooX::PluginRoles::Core;
 
 use Moo;
 
-use Moo::Role ();
 use Module::Pluggable::Object 4.9;
-use Module::Runtime 0.014 qw( require_module );
-use Carp;
+use Eval::Closure;
+use Module::Runtime;
 use namespace::clean;
+
+my %SPEC_PLUGINS;
 
 has pkg => (
     is       => 'ro',
@@ -23,57 +24,17 @@ has plugin_dir => (
     required => 1,
 );
 
-has plugins => (
-    is       => 'ro',
-    required => 1,
-);
-
-has canonical_plugins => (
+has class_plugin_roles => (
     is       => 'ro',
     init_arg => undef,
     lazy     => 1,
-    builder  => '_build_canonical_plugins',
+    builder  => '_build_class_plugin_roles',
 );
 
-sub _build_canonical_plugins {
-    my $self = shift;
-    return join '||', sort @{ $self->plugins };
-}
-
-sub plugins_compatible {
-    my ( $self, $plugins ) = @_;
-    $plugins = join '||', sort @{$plugins};
-    return $plugins eq $self->canonical_plugins;
-}
-
-has _callers => (
-    is       => 'ro',
-    init_arg => undef,
-    default  => sub { [] },
-);
-
-sub add_caller {
-    my ( $self, $file, $line ) = @_;
-    push @{ $self->_callers }, { file => $file, line => $line };
-    return;
-}
-
-sub caller_list {
-    my $self = shift;
-    return map { $_->{file} . ', line ' . $_->{line} } @{ $self->_callers };
-}
-
-has _plugin_roles => (
-    is       => 'ro',
-    init_arg => undef,
-    lazy     => 1,
-    builder  => '_build__plugin_roles',
-);
-
-sub _build__plugin_roles {
+sub _build_class_plugin_roles {
     my $self = shift;
 
-    my %plugin_roles;
+    my %class_plugin_roles;
 
     my $pkg        = $self->pkg;
     my $plugin_dir = $self->plugin_dir;
@@ -84,45 +45,108 @@ sub _build__plugin_roles {
     for my $found ( $finder->plugins ) {
         my ( $plugin, $base_class ) =
           $found =~ / ^ $search_path :: ([^:]+) :: (.*) $ /x;
-        $plugin_roles{$plugin}->{$base_class} = $found;
+        my $class = join '::', $pkg, $base_class;
+        $class_plugin_roles{$class}->{$plugin} = $found;
     }
 
-    return \%plugin_roles;
+    return \%class_plugin_roles;
 }
 
-has _applied => (
-    is       => 'rw',
-    init_arg => undef,
-    default  => undef,
-);
+my $wrapper_code = <<'EOF';
+use Moo::Role;
+around new => sub {
+    my ( $orig, $class, @args ) = @_;
+    my ($caller) = caller(2);
 
-sub apply_plugins {
-    my $self = shift;
-
-    return if $self->_applied;
-
-    my $pkg          = $self->pkg;
-    my $plugin_roles = $self->_plugin_roles;
-    my $base_classes = $self->base_classes;
-
-    my %new_roles;
-
-    for my $plugin ( @{ $self->plugins } ) {
-        my $roles = $plugin_roles->{$plugin}
-          or next;
-
-        for my $class (@$base_classes) {
-            my $new_role = $roles->{$class}
-              or next;
-            require_module($new_role);
-            push @{ $new_roles{"${pkg}::$class"} }, $new_role;
+    for my $client ( @{ $core->_clients } ) {
+        if ( $caller =~ /^$client->{pkg}(?:$|::)/ ) {
+            if ( my $new_class = $spec_plugins->{$client->{spec}}->{$class} ) {
+                return $new_class->new(@args);
+            }
+            last;
         }
     }
 
-    Moo::Role->apply_roles_to_package( $_, @{ $new_roles{$_} } )
-      for keys %new_roles;
+    return $class->$orig(@args);
+};
+EOF
 
-    $self->_applied(1);
+sub _wrap_base_class {
+    my ( $self, $base_class ) = @_;
+
+    Module::Runtime::use_module($base_class);
+
+    my $wrapper_role = 'MooX::PluginRoles::Wrapped::' . $base_class;
+    return if $base_class->does($wrapper_role);
+
+    my $eval = eval_closure(
+        source => [ 'sub {', "package $wrapper_role;", $wrapper_code, '}', ],
+        environment => {
+            '$core'         => \$self,
+            '$spec_plugins' => \\%SPEC_PLUGINS,
+        },
+    );
+
+    $eval->();
+
+    Moo::Role->apply_roles_to_package( $base_class, $wrapper_role );
+
+    return;
+}
+
+# create plugin roles for given plugins, and return spec and role mapping
+sub _spec_plugins {
+    my ( $self, $plugins ) = @_;
+
+    my $spec = join '||', sort @$plugins;
+
+    my $classes = $SPEC_PLUGINS{$spec};
+
+    if ( !$classes ) {
+        my $cpr = $self->class_plugin_roles;
+        for my $base_class ( @{ $self->base_classes } ) {
+            my $class = join '::', $self->pkg, $base_class;
+            my $pr = $cpr->{$class}
+              or next;
+            $self->_wrap_base_class($class);    # idempotent
+            my @roles = grep { defined } map { $pr->{$_} } @$plugins
+              or next;
+            $classes->{$class} =
+              Moo::Role->create_class_with_roles( $class, @roles );
+        }
+
+        $SPEC_PLUGINS{$spec} = $classes;
+    }
+    return ( $spec, $classes );
+}
+
+has _clients => (
+    is      => 'rw',
+    default => sub { []; },
+);
+
+sub add_client {
+    my ( $self, %client_args ) = @_;
+
+    # FIXME - validate arguments
+    my ( $spec, $classes ) = $self->_spec_plugins( $client_args{plugins} );
+
+    my $client = {
+        spec    => $spec,
+        classes => $classes,
+        pkg     => $client_args{pkg},
+        file    => $client_args{file},
+        line    => $client_args{line},
+    };
+
+    # store clients sorted by descending package length, so that searching
+    # will find the longest match
+    $self->_clients(
+        [
+            sort { length $b->{pkg} <=> length $a->{pkg} }
+              ( @{ $self->_clients }, $client ),
+        ]
+    );
 
     return;
 }
@@ -136,7 +160,7 @@ __END__
 
 =head1 NAME
 
-MooX::PluginRoles::Core;
+MooX::PluginRoles::Core - core plugin functionality
 
 =head1 SYNOPSIS
 
@@ -144,7 +168,8 @@ MooX::PluginRoles::Core;
 
 =head1 DESCRIPTION
 
-MooX::PluginRoles::Core implements the core PluginRoles logic
+C<MooX::PluginRoles::Core> implements the core PluginRoles logic for
+the class that defines the plugin system (UGLY - rephrase)
 
 =head1 AUTHOR
 

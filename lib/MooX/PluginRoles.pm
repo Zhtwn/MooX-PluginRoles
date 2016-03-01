@@ -7,57 +7,73 @@ use 5.008_005;
 our $VERSION = '0.01';
 
 use MooX::PluginRoles::Core;
-use Carp;
+use Eval::Closure;
 use namespace::clean;
 
 my %PLUGIN_CORES;
 
 sub _register_plugins {
-    my ( $pkg, $p_file, $p_line, $opts, $caller_opts ) = @_;
+    my %args = @_;
 
-    my $plugins    = $caller_opts->{plugins} || [];
-    my $plugin_dir = $opts->{plugin_dir}     || 'PluginRoles';
-
-    my $core = $PLUGIN_CORES{$pkg} ||= MooX::PluginRoles::Core->new(
-        pkg          => $pkg,
-        base_classes => $opts->{plugin_base_classes},
-        plugin_dir   => $plugin_dir,
-        plugins      => $plugins,
+    my $core = $PLUGIN_CORES{ $args{pkg} } ||= MooX::PluginRoles::Core->new(
+        pkg          => $args{pkg},
+        base_classes => $args{base_classes},
+        plugin_dir   => $args{plugin_dir},
     );
 
-    if ( !$core->plugins_compatible($plugins) ) {
-        my $spec_plugins = join ', ', @{ $core->plugins };
-        croak
-          "PluginRoles conflict: cannot use $pkg with @$plugins plugin(s):\n\t",
-          "Already used with $spec_plugins plugin(s) at:\n\t\t",
-          join( "\n\t\t", $core->caller_list ),
-          "\n";
-    }
-
-    $core->add_caller( $p_file, $p_line );
-
-    $core->apply_plugins;
+    $core->add_client(
+        pkg     => $args{client_pkg},
+        file    => $args{client_file},
+        line    => $args{client_line},
+        plugins => $args{plugins},
+    );
 
     return;
 }
 
 sub import {
-    my ( $me, %opts ) = @_;    
+    my ( $me, %opts ) = @_;
 
-    my ( $pkg, $file ) = caller;
-    my ( $p_pkg, $p_file, $p_line ) = caller(3);
+    my ($pkg) = caller;
 
     {
-        my $old = $pkg->can('import');
+        my $old_import = $pkg->can('import');
 
         no strict 'refs';          ## no critic (ProhibitNoStrict)
         no warnings 'redefine';    ## no critic (ProhibitNoWarnings)
 
-        *{"${pkg}::import"} = sub {
+        my $code = <<'EOF';
+        sub {
+            # FIXME - validate args
+            #   base options:
+            #     plugin_dir (valid package name part)
+            #     plugin_base_classes (arrayref of >0 class names)
+            #   client options:
+            #     plugins (arrayref of 0 or more plugin path names)
             my $caller_opts = { @_[ 1 .. $#_ ] };
-            $old->(@_) if $old;
-            _register_plugins( $pkg, $p_file, $p_line, \%opts, $caller_opts );
-        };
+            $old_import->(@_)
+              if $old_import;
+            my ( $client_pkg, $client_file, $client_line ) = caller;
+            MooX::PluginRoles::_register_plugins(
+                %$caller_opts,
+                pkg => $pkg,
+                client_pkg => $client_pkg,
+                client_file => $client_file,
+                client_line => $client_line,
+                plugin_dir => $opts{plugin_dir} || 'PluginRoles',
+                plugins => $caller_opts->{plugins} || [],
+                base_classes => $opts{plugin_base_classes} || [],
+            );
+        }
+EOF
+        *{"${pkg}::import"} = eval_closure(
+            source      => $code,
+            environment => {
+                '$pkg'        => \$pkg,
+                '$old_import' => \$old_import,
+                '%opts'       => \%opts,
+            }
+        );
     }
 
     return;

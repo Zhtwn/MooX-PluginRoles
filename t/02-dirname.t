@@ -7,7 +7,9 @@ use lib 't/lib';
 use Quux plugins => ['Bar'];
 use Quux::A;
 
-can_ok( 'Quux::A', 'a' );
-can_ok( 'Quux::A', 'bar_a' );
+my $a = Quux::A->new;
+
+can_ok( $a, 'a' );
+can_ok( $a, 'bar_a' );
 
 done_testing;
