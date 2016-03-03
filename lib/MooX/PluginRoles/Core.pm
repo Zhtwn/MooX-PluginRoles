@@ -104,6 +104,7 @@ sub _spec_plugins {
 
     if ( !$classes ) {
         my $cpr = $self->class_plugin_roles;
+        $classes = {};
         for my $base_class ( @{ $self->base_classes } ) {
             my $class = join '::', $self->pkg, $base_class;
             my $pr = $cpr->{$class}
