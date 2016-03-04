@@ -10,6 +10,8 @@ use MooX::PluginRoles::Core;
 use Eval::Closure;
 use namespace::clean;
 
+my $DEFAULT_PLUGIN_DIR = 'PluginRoles';
+
 my %PLUGIN_CORES;
 
 sub _register_plugins {    ## no critic (ProhibitUnusedPrivateSubroutines)
@@ -60,7 +62,7 @@ sub import {
                 client_pkg => $client_pkg,
                 client_file => $client_file,
                 client_line => $client_line,
-                plugin_dir => $opts{plugin_dir} || 'PluginRoles',
+                plugin_dir => $opts{plugin_dir} || $default_plugin_dir,
                 plugins => $caller_opts->{plugins} || [],
                 base_classes => $opts{plugin_base_classes} || [],
             );
@@ -72,6 +74,7 @@ EOF
                 '$pkg'        => \$pkg,
                 '$old_import' => \$old_import,
                 '%opts'       => \%opts,
+                '$default_plugin_dir' => \$DEFAULT_PLUGIN_DIR,
             }
         );
     }
