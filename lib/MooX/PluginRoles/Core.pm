@@ -167,16 +167,97 @@ __END__
 
 =head1 NAME
 
-MooX::PluginRoles::Core - core plugin functionality
+MooX::PluginRoles::Core - find and apply plugin roles
 
 =head1 SYNOPSIS
 
-  # do not use
+  # do not use directly
 
 =head1 DESCRIPTION
 
-C<MooX::PluginRoles::Core> implements the core PluginRoles logic for
-the class that defines the plugin system (UGLY - rephrase)
+C<MooX::PluginRoles::Core> implements the core PluginRoles logic. It
+is used by C<MooX::PluginRoles>, and is not expected to be used directly.
+
+=head2 Required Parameters
+
+=over
+
+=item base_class
+
+Name of the package that is calling C<MooX::PluginRoles>
+
+=item classes
+
+ArrayRef of classes within the base namespace that can be extended
+
+=item plugin_dir
+
+Directory to search for plugins
+
+=item role_dir
+
+Directory within C<plugin_dir> to search for roles
+
+=back
+
+=head2 Attributes
+
+=over
+
+=item class_plugin_roles
+
+Roles provided for each class by each available plugin,
+hashed by extendable class and plugin
+
+=back
+
+=head2 Methods
+
+=over
+
+=item add_client
+
+Add the given client to the list of clients using this base package.
+
+Parameters:
+
+=over
+
+=item pkg
+
+Name of client package
+
+=item file
+
+File of client package
+
+=item line
+
+Line number where client package included base class
+
+=item plugins
+
+ArrayRef of plugins to use
+
+=back
+
+=back
+
+=head2 Internals
+
+L<Module::Pluggable::Object> is used to search the plugin role
+directories.
+
+An anonymous class is created for each base class with each unique
+set of plugins, using L<Eval::Closure>.
+
+All clients are tracked, with their specified set of plugins, so that
+the proper anonymous classes can be used when the base class constructors
+are called within each client's namespace.
+
+The base class constructors are wrapped by creating an anonymous role
+wrapping C<new> method, using the caller's namespace to determine the
+appropriate anonymous class to construct.
 
 =head1 AUTHOR
 
@@ -184,13 +265,11 @@ Noel Maddy E<lt>zhtwnpanta@gmail.comE<gt>
 
 =head1 COPYRIGHT
 
-Copyright 2016- Noel Maddy
+Copyright 2016 Noel Maddy
 
 =head1 LICENSE
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
-
-=head1 SEE ALSO
 
 =cut
