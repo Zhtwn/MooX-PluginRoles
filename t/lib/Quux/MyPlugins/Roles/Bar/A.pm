@@ -1,4 +1,4 @@
-package Quux::Plugins::Roles::Bar::A;
+package Quux::MyPlugins::Roles::Bar::A;
 
 # ABSTRACT: Quux::A with Bar plugin role
 

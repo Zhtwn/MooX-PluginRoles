@@ -10,7 +10,7 @@ use MooX::PluginRoles::Core;
 use Eval::Closure;
 use namespace::clean;
 
-my $DEFAULT_PLUGIN_DIR = 'PluginRoles';
+my $DEFAULT_PLUGIN_DIR = 'Plugins';
 my $DEFAULT_ROLE_DIR   = 'Roles';
 
 my %PLUGIN_CORES;
@@ -51,6 +51,7 @@ sub import {
             # FIXME - validate args
             #   base options:
             #     plugin_dir (valid package name part)
+            #     plugin_role_dir (valid package name part)
             #     plugin_base_classes (arrayref of >0 class names)
             #   client options:
             #     plugins (arrayref of 0 or more plugin path names)
