@@ -1,4 +1,4 @@
-package MooX::PluginRoles::Core;
+package MooX::PluginRoles::Base;
 
 use Moo;
 
@@ -167,7 +167,7 @@ __END__
 
 =head1 NAME
 
-MooX::PluginRoles::Core - find and apply plugin roles
+MooX::PluginRoles::Base - find and apply plugin roles
 
 =head1 SYNOPSIS
 
@@ -175,7 +175,7 @@ MooX::PluginRoles::Core - find and apply plugin roles
 
 =head1 DESCRIPTION
 
-C<MooX::PluginRoles::Core> implements the core PluginRoles logic. It
+C<MooX::PluginRoles::Base> implements the core PluginRoles logic. It
 is used by C<MooX::PluginRoles>, and is not expected to be used directly.
 
 =head2 Required Parameters

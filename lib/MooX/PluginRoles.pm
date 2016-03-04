@@ -6,7 +6,7 @@ use 5.008_005;
 
 our $VERSION = '0.01';
 
-use MooX::PluginRoles::Core;
+use MooX::PluginRoles::Base;
 use Eval::Closure;
 use namespace::clean;
 
@@ -18,7 +18,7 @@ my %PLUGIN_CORES;
 sub _register_plugins {    ## no critic (ProhibitUnusedPrivateSubroutines)
     my %args = @_;
 
-    my $core = $PLUGIN_CORES{ $args{base_class} } ||= MooX::PluginRoles::Core->new(
+    my $core = $PLUGIN_CORES{ $args{base_class} } ||= MooX::PluginRoles::Base->new(
         base_class   => $args{base_class},
         classes      => $args{classes},
         plugin_dir   => $args{plugin_dir},
@@ -261,10 +261,10 @@ it is being used in this client.
 =head2 Internals
 
 When C<MooX::PluginRoles> is used, adds a wrapper around the caller's
-C<import> method that creates a L<MooX::PluginRoles::Core> instance for
+C<import> method that creates a L<MooX::PluginRoles::Base> instance for
 the caller, and saves it in a class-scoped hash.
 
-The C<Core> instance finds the available plugins and roles, creates
+The C<Base> instance finds the available plugins and roles, creates
 anonymous classes with the plugin roles applied, and creates an
 anonymous role for each base class that wraps the C<new> method so that
 the proper anonymous class can be used to create the instances.
