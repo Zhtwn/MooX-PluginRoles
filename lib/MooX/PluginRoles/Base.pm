@@ -66,7 +66,8 @@ around new => sub {
 
     for my $client ( @{ $core->_clients } ) {
         if ( $caller =~ /^$client->{pkg}(?:$|::)/ ) {
-            if ( my $new_class = $spec_plugins->{$client->{spec}}->{$class} ) {
+            if ( my $new_class = $spec_plugins->{ $client->{spec} }->{$class} )
+            {
                 return $new_class->new(@args);
             }
             last;

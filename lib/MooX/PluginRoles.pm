@@ -18,12 +18,13 @@ my %PLUGIN_CORES;
 sub _register_plugins {    ## no critic (ProhibitUnusedPrivateSubroutines)
     my %args = @_;
 
-    my $core = $PLUGIN_CORES{ $args{base_class} } ||= MooX::PluginRoles::Base->new(
-        base_class   => $args{base_class},
-        classes      => $args{classes},
-        plugin_dir   => $args{plugin_dir},
-        role_dir     => $args{role_dir},
-    );
+    my $core = $PLUGIN_CORES{ $args{base_class} } ||=
+      MooX::PluginRoles::Base->new(
+        base_class => $args{base_class},
+        classes    => $args{classes},
+        plugin_dir => $args{plugin_dir},
+        role_dir   => $args{role_dir},
+      );
 
     $core->add_client(
         pkg     => $args{client_pkg},
@@ -61,25 +62,25 @@ sub import {
             my ( $client_pkg, $client_file, $client_line ) = caller;
             MooX::PluginRoles::_register_plugins(
                 %$caller_opts,
-                base_class => $base_class,
-                client_pkg => $client_pkg,
+                base_class  => $base_class,
+                client_pkg  => $client_pkg,
                 client_file => $client_file,
                 client_line => $client_line,
-                plugin_dir => $opts{plugin_dir} || $default_plugin_dir,
-                role_dir => $opts{plugin_role_dir} || $default_role_dir,
-                plugins => $caller_opts->{plugins} || [],
-                classes => $opts{plugin_classes} || [],
+                plugin_dir  => $opts{plugin_dir} || $default_plugin_dir,
+                role_dir    => $opts{plugin_role_dir} || $default_role_dir,
+                plugins     => $caller_opts->{plugins} || [],
+                classes     => $opts{plugin_classes} || [],
             );
         }
 EOF
         *{"${base_class}::import"} = eval_closure(
             source      => $code,
             environment => {
-                '$base_class'        => \$base_class,
-                '$old_import' => \$old_import,
-                '%opts'       => \%opts,
+                '$base_class'         => \$base_class,
+                '$old_import'         => \$old_import,
+                '%opts'               => \%opts,
                 '$default_plugin_dir' => \$DEFAULT_PLUGIN_DIR,
-                '$default_role_dir' => \$DEFAULT_ROLE_DIR,
+                '$default_role_dir'   => \$DEFAULT_ROLE_DIR,
             }
         );
     }
