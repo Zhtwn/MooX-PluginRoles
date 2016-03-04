@@ -62,6 +62,17 @@
       }
    },
    "release_status" : "stable",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/Zhtwn/MooX-PluginRoles/issues"
+      },
+      "homepage" : "https://github.com/Zhtwn/MooX-PluginRoles",
+      "repository" : {
+         "type" : "git",
+         "url" : "https://github.com/Zhtwn/MooX-PluginRoles.git",
+         "web" : "https://github.com/Zhtwn/MooX-PluginRoles"
+      }
+   },
    "version" : "0.01"
 }
 
