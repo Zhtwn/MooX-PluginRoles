@@ -14,7 +14,7 @@ has pkg => (
     required => 1,
 );
 
-has base_classes => (
+has classes => (
     is       => 'ro',
     required => 1,
 );
@@ -49,10 +49,10 @@ sub _build_class_plugin_roles {
     my $finder = Module::Pluggable::Object->new( search_path => $search_path );
 
     for my $found ( $finder->plugins ) {
-        my ( $plugin, $base_class ) =
+        my ( $plugin, $class ) =
           $found =~ / ^ $search_path :: ([^:]+) :: (.*) $ /x;
-        my $class = join '::', $pkg, $base_class;
-        $class_plugin_roles{$class}->{$plugin} = $found;
+        my $full_class = join '::', $pkg, $class;
+        $class_plugin_roles{$full_class}->{$plugin} = $found;
     }
 
     return \%class_plugin_roles;
@@ -77,13 +77,13 @@ around new => sub {
 };
 EOF
 
-sub _wrap_base_class {
-    my ( $self, $base_class ) = @_;
+sub _wrap_class {
+    my ( $self, $class ) = @_;
 
-    Module::Runtime::use_module($base_class);
+    Module::Runtime::use_module($class);
 
-    my $wrapper_role = 'MooX::PluginRoles::Wrapped::' . $base_class;
-    return if $base_class->does($wrapper_role);
+    my $wrapper_role = 'MooX::PluginRoles::Wrapped::' . $class;
+    return if $class->does($wrapper_role);
 
     my $eval = eval_closure(
         source => [ 'sub {', "package $wrapper_role;", $wrapper_code, '}', ],
@@ -95,7 +95,7 @@ sub _wrap_base_class {
 
     $eval->();
 
-    Moo::Role->apply_roles_to_package( $base_class, $wrapper_role );
+    Moo::Role->apply_roles_to_package( $class, $wrapper_role );
 
     return;
 }
@@ -111,15 +111,15 @@ sub _spec_plugins {
     if ( !$classes ) {
         my $cpr = $self->class_plugin_roles;
         $classes = {};
-        for my $base_class ( @{ $self->base_classes } ) {
-            my $class = join '::', $self->pkg, $base_class;
-            my $pr = $cpr->{$class}
+        for my $class ( @{ $self->classes } ) {
+            my $full_class = join '::', $self->pkg, $class;
+            my $pr = $cpr->{$full_class}
               or next;
-            $self->_wrap_base_class($class);    # idempotent
+            $self->_wrap_class($full_class);    # idempotent
             my @roles = grep { defined } map { $pr->{$_} } @$plugins
               or next;
-            $classes->{$class} =
-              Moo::Role->create_class_with_roles( $class, @roles );
+            $classes->{$full_class} =
+              Moo::Role->create_class_with_roles( $full_class, @roles );
         }
 
         $SPEC_PLUGINS{$spec} = $classes;

@@ -20,7 +20,7 @@ sub _register_plugins {    ## no critic (ProhibitUnusedPrivateSubroutines)
 
     my $core = $PLUGIN_CORES{ $args{pkg} } ||= MooX::PluginRoles::Core->new(
         pkg          => $args{pkg},
-        base_classes => $args{base_classes},
+        classes      => $args{classes},
         plugin_dir   => $args{plugin_dir},
         role_dir     => $args{role_dir},
     );
@@ -52,7 +52,7 @@ sub import {
             #   base options:
             #     plugin_dir (valid package name part)
             #     plugin_role_dir (valid package name part)
-            #     plugin_base_classes (arrayref of >0 class names)
+            #     plugin_classes (arrayref of >0 class names)
             #   client options:
             #     plugins (arrayref of 0 or more plugin path names)
             my $caller_opts = { @_[ 1 .. $#_ ] };
@@ -68,7 +68,7 @@ sub import {
                 plugin_dir => $opts{plugin_dir} || $default_plugin_dir,
                 role_dir => $opts{plugin_role_dir} || $default_role_dir,
                 plugins => $caller_opts->{plugins} || [],
-                base_classes => $opts{plugin_base_classes} || [],
+                classes => $opts{plugin_classes} || [],
             );
         }
 EOF
