@@ -24,6 +24,11 @@ has plugin_dir => (
     required => 1,
 );
 
+has role_dir => (
+    is       => 'ro',
+    required => 1,
+);
+
 has class_plugin_roles => (
     is       => 'ro',
     init_arg => undef,
@@ -38,8 +43,9 @@ sub _build_class_plugin_roles {
 
     my $pkg        = $self->pkg;
     my $plugin_dir = $self->plugin_dir;
+    my $role_dir   = $self->role_dir;
 
-    my $search_path = join '::', $pkg, $plugin_dir;
+    my $search_path = join '::', $pkg, $plugin_dir, $role_dir;
     my $finder = Module::Pluggable::Object->new( search_path => $search_path );
 
     for my $found ( $finder->plugins ) {

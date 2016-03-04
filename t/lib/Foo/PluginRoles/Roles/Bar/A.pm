@@ -1,4 +1,4 @@
-package Foo::PluginRoles::Bar::A;
+package Foo::PluginRoles::Roles::Bar::A;
 
 # ABSTRACT: Foo::A with Bar plugin role
 

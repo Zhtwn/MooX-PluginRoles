@@ -11,6 +11,7 @@ use Eval::Closure;
 use namespace::clean;
 
 my $DEFAULT_PLUGIN_DIR = 'PluginRoles';
+my $DEFAULT_ROLE_DIR   = 'Roles';
 
 my %PLUGIN_CORES;
 
@@ -21,6 +22,7 @@ sub _register_plugins {    ## no critic (ProhibitUnusedPrivateSubroutines)
         pkg          => $args{pkg},
         base_classes => $args{base_classes},
         plugin_dir   => $args{plugin_dir},
+        role_dir     => $args{role_dir},
     );
 
     $core->add_client(
@@ -63,6 +65,7 @@ sub import {
                 client_file => $client_file,
                 client_line => $client_line,
                 plugin_dir => $opts{plugin_dir} || $default_plugin_dir,
+                role_dir => $opts{plugin_role_dir} || $default_role_dir,
                 plugins => $caller_opts->{plugins} || [],
                 base_classes => $opts{plugin_base_classes} || [],
             );
@@ -75,6 +78,7 @@ EOF
                 '$old_import' => \$old_import,
                 '%opts'       => \%opts,
                 '$default_plugin_dir' => \$DEFAULT_PLUGIN_DIR,
+                '$default_role_dir' => \$DEFAULT_ROLE_DIR,
             }
         );
     }

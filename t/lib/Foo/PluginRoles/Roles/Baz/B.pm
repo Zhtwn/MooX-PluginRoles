@@ -1,4 +1,4 @@
-package Foo::PluginRoles::Baz::B;
+package Foo::PluginRoles::Roles::Baz::B;
 
 # ABSTRACT: Foo::B with Baz plugin role
 
