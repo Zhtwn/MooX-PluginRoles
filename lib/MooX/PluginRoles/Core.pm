@@ -9,7 +9,7 @@ use namespace::clean;
 
 my %SPEC_PLUGINS;
 
-has pkg => (
+has base_class => (
     is       => 'ro',
     required => 1,
 );
@@ -41,17 +41,17 @@ sub _build_class_plugin_roles {
 
     my %class_plugin_roles;
 
-    my $pkg        = $self->pkg;
+    my $base_class = $self->base_class;
     my $plugin_dir = $self->plugin_dir;
     my $role_dir   = $self->role_dir;
 
-    my $search_path = join '::', $pkg, $plugin_dir, $role_dir;
+    my $search_path = join '::', $base_class, $plugin_dir, $role_dir;
     my $finder = Module::Pluggable::Object->new( search_path => $search_path );
 
     for my $found ( $finder->plugins ) {
         my ( $plugin, $class ) =
           $found =~ / ^ $search_path :: ([^:]+) :: (.*) $ /x;
-        my $full_class = join '::', $pkg, $class;
+        my $full_class = join '::', $base_class, $class;
         $class_plugin_roles{$full_class}->{$plugin} = $found;
     }
 
@@ -112,7 +112,7 @@ sub _spec_plugins {
         my $cpr = $self->class_plugin_roles;
         $classes = {};
         for my $class ( @{ $self->classes } ) {
-            my $full_class = join '::', $self->pkg, $class;
+            my $full_class = join '::', $self->base_class, $class;
             my $pr = $cpr->{$full_class}
               or next;
             $self->_wrap_class($full_class);    # idempotent

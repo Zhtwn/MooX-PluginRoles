@@ -18,8 +18,8 @@ my %PLUGIN_CORES;
 sub _register_plugins {    ## no critic (ProhibitUnusedPrivateSubroutines)
     my %args = @_;
 
-    my $core = $PLUGIN_CORES{ $args{pkg} } ||= MooX::PluginRoles::Core->new(
-        pkg          => $args{pkg},
+    my $core = $PLUGIN_CORES{ $args{base_class} } ||= MooX::PluginRoles::Core->new(
+        base_class   => $args{base_class},
         classes      => $args{classes},
         plugin_dir   => $args{plugin_dir},
         role_dir     => $args{role_dir},
@@ -38,10 +38,10 @@ sub _register_plugins {    ## no critic (ProhibitUnusedPrivateSubroutines)
 sub import {
     my ( $me, %opts ) = @_;
 
-    my ($pkg) = caller;
+    my ($base_class) = caller;
 
     {
-        my $old_import = $pkg->can('import');
+        my $old_import = $base_class->can('import');
 
         no strict 'refs';          ## no critic (ProhibitNoStrict)
         no warnings 'redefine';    ## no critic (ProhibitNoWarnings)
@@ -61,7 +61,7 @@ sub import {
             my ( $client_pkg, $client_file, $client_line ) = caller;
             MooX::PluginRoles::_register_plugins(
                 %$caller_opts,
-                pkg => $pkg,
+                base_class => $base_class,
                 client_pkg => $client_pkg,
                 client_file => $client_file,
                 client_line => $client_line,
@@ -72,10 +72,10 @@ sub import {
             );
         }
 EOF
-        *{"${pkg}::import"} = eval_closure(
+        *{"${base_class}::import"} = eval_closure(
             source      => $code,
             environment => {
-                '$pkg'        => \$pkg,
+                '$base_class'        => \$base_class,
                 '$old_import' => \$old_import,
                 '%opts'       => \%opts,
                 '$default_plugin_dir' => \$DEFAULT_PLUGIN_DIR,
