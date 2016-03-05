@@ -42,7 +42,7 @@
             "Eval::Closure" : "0",
             "Module::Pluggable::Object" : "4.9",
             "Module::Runtime" : "0",
-            "Moo" : "0",
+            "Moo" : "1.007000",
             "namespace::clean" : "0",
             "perl" : "5.008005",
             "strict" : "0",
@@ -52,6 +52,7 @@
       "test" : {
          "requires" : {
             "File::Spec" : "0",
+            "Hook::LexWrap" : "0",
             "IO::Handle" : "0",
             "IPC::Open3" : "0",
             "Moo::Role" : "0",
