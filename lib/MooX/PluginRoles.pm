@@ -43,6 +43,8 @@ sub import {
 
     {
         my $old_import = $base_class->can('import');
+        undef $old_import
+            if defined &UNIVERSAL::import && $old_import == \&UNIVERSAL::import;
 
         no strict 'refs';          ## no critic (ProhibitNoStrict)
         no warnings 'redefine';    ## no critic (ProhibitNoWarnings)
